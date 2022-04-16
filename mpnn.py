@@ -3,6 +3,7 @@ from torch.nn import Module, Linear, Sequential, BatchNorm1d, ReLU
 
 import torch_geometric
 from torch_geometric.nn import MessagePassing
+from torch_geometric.utils import grid
 from torch_scatter import scatter
 
 
@@ -29,6 +30,36 @@ class MPNNModel(Module):
         # h_graph = self.pool(h, data.batch) # (n, d) -> (batch_size, d)
 
         out = self.lin_pred(h) # (batch_size, d) -> (batch_size, 1)
+
+        return out
+
+
+class EdgeRegressionModel(Module):
+    def __init__(self, num_layers, emb_dim, in_dim, edge_dim):
+        super().__init__()
+        self.lin_in = Linear(in_dim, emb_dim)
+        self.edg_in = Linear(edge_dim, emb_dim)
+        
+        self.convs = torch.nn.ModuleList()
+        for layer in range(num_layers):
+            self.convs.append(EdgeRegressionLayer(emb_dim, emb_dim, aggr='add'))
+        
+        # self.pool = global_mean_pool
+
+        self.lin_pred = Linear(emb_dim, 1)  # Out dim = 1 cause edge prediction
+        
+    def forward(self, data):
+        h = self.lin_in(data.x) # (n, d_n) -> (n, d)
+        e = self.edg_in(data.fc_edge_attr.unsqueeze(1))
+        
+        for conv in self.convs:
+            h_next, e_next = conv(h, data.fc_edge_index, e)
+            h = h + h_next
+            e = e + e_next
+
+        # h_graph = self.pool(h, data.batch) # (n, d) -> (batch_size, d)
+
+        out = self.lin_pred(e) # (batch_size, d) -> (batch_size, 1)
 
         return out
 
@@ -68,6 +99,7 @@ class MPNNLayer(MessagePassing):
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}(emb_dim={self.emb_dim}, aggr={self.aggr})')
 
+
 class EdgeRegressionLayer(MessagePassing):
     def __init__(self, emb_dim=64, edge_dim=4, aggr='add'):
         super().__init__(aggr=aggr)
@@ -94,11 +126,12 @@ class EdgeRegressionLayer(MessagePassing):
         return self.mlp_msg(msg)
 
     def aggregate(self, inputs, index):
-        return inputs # scatter(inputs, index, dim=self.node_dim, reduce=self.aggr)
+        return scatter(inputs, index, dim=self.node_dim, reduce=self.aggr), inputs
 
     def update(self, aggr_out, h):
-        #upd_out = torch.cat([h, aggr_out], dim=-1)
-        return self.mlp_upd(aggr_out)
+        node_emb, edge_emb = aggr_out
+        upd_out = torch.cat([h, node_emb], dim=-1)
+        return self.mlp_upd(upd_out), edge_emb
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}(emb_dim={self.emb_dim}, aggr={self.aggr})')
