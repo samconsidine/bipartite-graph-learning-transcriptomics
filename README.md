@@ -15,7 +15,7 @@
 - [ ] Find a suitable benchmark to test it against (Autoencoder? PCA?)
 - [ ] Figure out what the applications of this is and steer benchmarking accordingly
 ### Data
-- [o] Find dataset with labels to use for cell classification
-    - [X] Assign unique ID to each gene so model knows which genes are which
-    - [ ] Add information to the gene features from different dataset
+- [X] Find dataset with labels to use for cell classification
+- [X] Assign unique ID to each gene so model knows which genes are which
+- [ ] Add information to the gene features from different dataset
 - [ ] Integrate multiple datasets
