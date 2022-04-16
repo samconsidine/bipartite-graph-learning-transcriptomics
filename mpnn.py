@@ -6,6 +6,7 @@ from torch_geometric.nn import MessagePassing
 from torch_scatter import scatter
 
 
+
 class MPNNModel(Module):
     def __init__(self, num_layers, emb_dim, in_dim, edge_dim, out_dim):
         super().__init__()
