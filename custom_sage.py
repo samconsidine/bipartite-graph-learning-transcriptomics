@@ -39,7 +39,7 @@ class GrapeModule(Module):
         )
 
     def forward(self, x, edge_attr, edge_index):
-        edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
+        #edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
         x = self.emb(x)
         for conv, edge_update in zip(self.convs, self.edge_update_fns[1:]):
             x = conv(x, edge_attr, edge_index)
