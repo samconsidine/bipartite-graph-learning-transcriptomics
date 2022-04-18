@@ -23,7 +23,7 @@ class GrapeModule(Module):
 
         ## Edge update layers
         edge_update_fn = Sequential(
-            Linear(2*in_dim + edge_dim, edge_dim),
+            Linear(2*emb_dim + edge_dim, edge_dim),
             ReLU(),
         )
         self.edge_update_fns = ModuleList([edge_update_fn])
@@ -39,8 +39,8 @@ class GrapeModule(Module):
         )
 
     def forward(self, x, edge_attr, edge_index):
-        #edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
         x = self.emb(x)
+        edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
         for conv, edge_update in zip(self.convs, self.edge_update_fns[1:]):
             x = conv(x, edge_attr, edge_index)
             edge_attr = self.update_edges(x, edge_attr, edge_index, edge_update)
