@@ -11,10 +11,12 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 def random_mask(size, proportion):
     return torch.randperm(size) < size * proportion
 
+
 def convert_to_undigraph(edge_index, edge_attr):
     new_edges = torch.cat((edge_index, torch.flip(edge_index, [0])), dim=-1)
     new_attrs = torch.cat((edge_attr, edge_attr), dim=-1)
-    return new_edges, new_attrs
+    return new_edges.to(device), new_attrs.to(device)
+
 
 def bipartite_graph_dataloader(data, include_gene_idx, include_fc_data=False):
     n_cells = data.X.shape[0]
@@ -36,16 +38,15 @@ def bipartite_graph_dataloader(data, include_gene_idx, include_fc_data=False):
     from_nodes = torch.repeat_interleave(torch.arange(n_cells), n_genes)
     to_nodes = torch.repeat_interleave(torch.arange(n_cells, n_genes+n_cells), n_cells)
     fc_edge_index = torch.stack([from_nodes, to_nodes]).long()
+    print(f"{n_genes * n_cells = }")
+    print(f"{fc_edge_index.shape=}")
 
     fc_edge_attr = torch.tensor(data.X.flatten())
     assert fc_edge_attr.shape[0] == fc_edge_index.shape[1]
-
-    # if include_fc_data:
-    #     fc_edge_index, fc_edge_attr = to_undirected(fc_edge_index, fc_edge_attr)
-    # else:
-    #     fc_edge_index, fc_edge_attr = None, None
-
+    
+    print(f"{fc_edge_attr.shape=}")
     fc_edge_index, fc_edge_attr = convert_to_undigraph(fc_edge_index, fc_edge_attr)
+    print(f"{fc_edge_attr.shape=}")
 
     return Data(
         x=x,

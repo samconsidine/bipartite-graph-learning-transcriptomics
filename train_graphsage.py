@@ -19,8 +19,22 @@ edge_target = (data.fc_edge_attr > 0).float()
 node_target = data.y
 
 model.train()
+
+def node_accuracy(pred, target):
+    print(pred.max(1)[1])
+    print(target)
+    return (pred.max(1)[1] == target).float().mean().item()
+
+def edge_accuracy(pred, target):
+    class_choice = (pred.flatten() > 0.5).long()
+    print(target.shape)
+    print(class_choice.shape)
+    return (target == class_choice).float().mean().item()
+
+
 for epoch in range(20000):
     optimizer.zero_grad()
+    print(f"{data.fc_edge_attr.shape=}")
     node_pred, edge_pred = model(data.x, data.fc_edge_attr.unsqueeze(0).T, data.fc_edge_index)
     node_loss = node_loss_fn(node_pred, node_target)  
     edge_loss = edge_loss_fn(edge_pred.flatten(), edge_target)
@@ -28,3 +42,10 @@ for epoch in range(20000):
     loss = node_loss + edge_loss
     loss.backward()
     optimizer.step()
+
+    print(f"{edge_pred.shape=}")
+    print(f"{edge_target.shape=}")
+    with torch.no_grad():
+        print("Node accuracy = ", node_accuracy(node_pred, node_target))
+        print("Edge accuracy = ", edge_accuracy(edge_pred, edge_target))
+
