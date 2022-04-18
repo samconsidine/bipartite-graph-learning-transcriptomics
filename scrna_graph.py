@@ -9,7 +9,7 @@ def random_mask(size, proportion):
     return torch.randperm(size) < size * proportion
 
 
-def bipartite_graph_dataloader(data, include_gene_idx):
+def bipartite_graph_dataloader(data, include_gene_idx, include_fc_data=False):
     n_cells = data.X.shape[0]
     n_genes = data.X.shape[1]
 
@@ -33,10 +33,10 @@ def bipartite_graph_dataloader(data, include_gene_idx):
     fc_edge_attr = torch.tensor(data.X.flatten())
     assert fc_edge_attr.shape[0] == fc_edge_index.shape[1]
 
-    print(fc_edge_index)
-    print(fc_edge_attr)
-
-    fc_edge_index, fc_edge_attr = to_undirected(fc_edge_index, fc_edge_attr)
+    if include_fc_data:
+        fc_edge_index, fc_edge_attr = to_undirected(fc_edge_index, fc_edge_attr)
+    else:
+        fc_edge_index, fc_edge_attr = None, None
 
     return Data(
         x=x,
@@ -62,7 +62,7 @@ def adata_to_bipartite_adj(data):
 
     edge_weights[:n_cells, n_cells:] = torch.tensor(df.values)
     edge_weights[n_cells:, :n_cells] = torch.tensor(df.values).T
-    
+
     return dense_to_sparse(edge_weights)
  
 

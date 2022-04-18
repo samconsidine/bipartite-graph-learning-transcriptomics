@@ -19,3 +19,5 @@
 - [X] Assign unique ID to each gene so model knows which genes are which
 - [ ] Add information to the gene features from different dataset
 - [ ] Integrate multiple datasets
+
+- [ ] Figure out bipartite data structure to use in training

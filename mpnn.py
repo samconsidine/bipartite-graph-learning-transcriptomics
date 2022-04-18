@@ -12,11 +12,11 @@ class MPNNModel(Module):
     def __init__(self, num_layers, emb_dim, in_dim, edge_dim, out_dim):
         super().__init__()
         self.lin_in = Linear(in_dim, emb_dim)
-        
+
         self.convs = torch.nn.ModuleList()
         for layer in range(num_layers):
             self.convs.append(MPNNLayer(emb_dim, edge_dim, aggr='add'))
-        
+
         # self.pool = global_mean_pool
 
         self.lin_pred = Linear(emb_dim, out_dim)
