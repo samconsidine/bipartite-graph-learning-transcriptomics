@@ -75,7 +75,7 @@ class GrapeModule(Module):
         edge_attr = torch.cat((x_i, x_j, edge_attr), dim=-1)
         return self.edge_prediction_fn(edge_attr)
 
-    def reset(self.):
+    def reset(self):
         return GrapeModule(**self.kws)
 
 

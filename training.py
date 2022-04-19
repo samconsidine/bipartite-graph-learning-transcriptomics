@@ -30,7 +30,7 @@ def train_grape(model: GrapeModule, X: pd.DataFrame, y: pd.DataFrame) -> GrapeMo
 
     model.train()
     prev_acc = 0
-    for epoch in range(20000):
+    for epoch in range(2000):
         optimizer.zero_grad()
         node_pred, edge_pred = model(data.x, data.edge_attr.unsqueeze(0).T, data.edge_index)
         node_loss = node_loss_fn(node_pred[data.mask], node_target[data.mask])
@@ -47,6 +47,8 @@ def train_grape(model: GrapeModule, X: pd.DataFrame, y: pd.DataFrame) -> GrapeMo
                 if (prev_acc == node_acc) and (node_acc < 0.5):
                     return train_grape(model.reset(), X, y)
                 prev_acc = node_acc
+                if node_acc > 0.95:
+                    return model
 
     return model
 
