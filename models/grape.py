@@ -6,9 +6,20 @@ from torch_scatter import scatter
 from torch.nn import Module, Linear, ReLU, Sequential, ModuleList
 
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
 class GrapeModule(Module):
     def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes):
         super().__init__()
+        self.kws = dict(
+            emb_dim = emb_dim,
+            n_layers = n_layers,
+            edge_dim = edge_dim,
+            out_dim = out_dim,
+            n_genes = n_genes
+        )
+
         self.edge_mlp = Linear(2*emb_dim, out_dim)
         
         self.emb = torch.nn.Embedding(n_genes+1, emb_dim)
@@ -38,6 +49,8 @@ class GrapeModule(Module):
             Linear(2*emb_dim + edge_dim, 1),
         )
 
+        self.to(device)
+
     def forward(self, x, edge_attr, edge_index):
         x = self.emb(x.long()).squeeze(1)
         edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
@@ -61,6 +74,9 @@ class GrapeModule(Module):
         x_j = x[edge_index[1],:]
         edge_attr = torch.cat((x_i, x_j, edge_attr), dim=-1)
         return self.edge_prediction_fn(edge_attr)
+
+    def reset(self.):
+        return GrapeModule(**self.kws)
 
 
 class GrapeLayer(MessagePassing):
