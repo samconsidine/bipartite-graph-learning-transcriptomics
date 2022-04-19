@@ -48,9 +48,9 @@ def train_grape(model: GrapeModule, X: pd.DataFrame, y: pd.DataFrame) -> GrapeMo
                     return train_grape(model.reset(), X, y)
                 prev_acc = node_acc
                 if node_acc > 0.95:
-                    return model
+                    return model, node_acc
 
-    return model
+    return model, node_acc
 
 
 def eval_grape(model: GrapeModule, X: pd.DataFrame, y:pd.DataFrame) -> float:
@@ -60,9 +60,9 @@ def eval_grape(model: GrapeModule, X: pd.DataFrame, y:pd.DataFrame) -> float:
     def node_accuracy(pred, target):
         return (pred.max(1)[1] == target).float().mean().item()
 
-    pred = model(data.x, data.edge_attr.unsqueeze(0).T, data.edge_index)
+    pred, _ = model(data.x, data.edge_attr.unsqueeze(0).T, data.edge_index)
 
-    return node_accuracy(pred, y)
+    return node_accuracy(pred[data.mask], data.y[data.mask])
 
 
 def train_logistic_regression(
