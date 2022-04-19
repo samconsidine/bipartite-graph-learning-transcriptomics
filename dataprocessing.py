@@ -3,7 +3,10 @@ import torch_geometric
 from torch_geometric.utils import dense_to_sparse, to_undirected
 from torch_geometric.data import Data
 import scanpy as sc
+from sklearn.model_selection import train_test_split
+import pandas as pd
 
+from torch.utils.data import DataLoader
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -18,38 +21,31 @@ def convert_to_undigraph(edge_index, edge_attr):
     return new_edges.to(device), new_attrs.to(device)
 
 
-def bipartite_graph_dataloader(data, include_gene_idx, include_fc_data=False):
-    n_cells = data.X.shape[0]
-    n_genes = data.X.shape[1]
+def bipartite_graph_dataloader(X, y, include_fc_data=False):
+    n_cells = X.shape[0]
+    n_genes = X.shape[1]
 
-    adj, edge_attr = adata_to_bipartite_adj(data)
+    adj, edge_attr = adata_to_bipartite_adj(X)
 
     mask = torch.cat([torch.ones(n_cells), torch.zeros(n_genes)]).to(torch.bool)
     train_mask = random_mask(n_cells, 0.8)
     train_mask = torch.cat([train_mask, torch.zeros(n_genes).to(torch.bool)])
-    y = torch.tensor(data.obs["paul15_clusters"].cat.codes.values)
+    y = torch.tensor(y.cat.codes.values)
     y = torch.cat([y, torch.zeros(n_genes)]).long().to(device)
     
-    if include_gene_idx:
-        x = torch.cat([torch.zeros(n_cells, n_genes), torch.eye(n_genes)], axis=0).to(device)
-    else:
-        x = torch.zeros((n_cells+n_genes,1)).to(device)
+    inputs = torch.cat([torch.zeros(n_cells), torch.arange(n_genes)], axis=0).unsqueeze(0).T.to(device)
 
     from_nodes = torch.repeat_interleave(torch.arange(n_cells), n_genes)
     to_nodes = torch.repeat_interleave(torch.arange(n_cells, n_genes+n_cells), n_cells)
     fc_edge_index = torch.stack([from_nodes, to_nodes]).long()
-    print(f"{n_genes * n_cells = }")
-    print(f"{fc_edge_index.shape=}")
 
-    fc_edge_attr = torch.tensor(data.X.flatten())
+    fc_edge_attr = torch.tensor(X.values.flatten())
     assert fc_edge_attr.shape[0] == fc_edge_index.shape[1]
     
-    print(f"{fc_edge_attr.shape=}")
     fc_edge_index, fc_edge_attr = convert_to_undigraph(fc_edge_index, fc_edge_attr)
-    print(f"{fc_edge_attr.shape=}")
 
     return Data(
-        x=x,
+        x=inputs,
         y=y,
         n_cells=n_cells,
         n_genes=n_genes,
@@ -62,8 +58,11 @@ def bipartite_graph_dataloader(data, include_gene_idx, include_fc_data=False):
     )
 
 
-def adata_to_bipartite_adj(data):
-    df = data.to_df()
+def to_batched(data: Data) -> DataLoader:
+    ...
+
+
+def adata_to_bipartite_adj(df):
     n_cells = df.shape[0]
     n_genes = df.shape[1]
     n_nodes = n_cells + n_genes
@@ -78,7 +77,16 @@ def adata_to_bipartite_adj(data):
 
 def load_data():
     data = sc.datasets.paul15()
-    return data
+    df = data.to_df()
+    df['target'] = data.obs
+    df = df.dropna(subset=['target'])
+    df['target'] = df.target.astype('category')
+    train, test = train_test_split(df)
+    train_X = train[train.columns[:-1]]
+    train_y = train['target']
+    test_X = test[test.columns[:-1]]
+    test_y = test['target']
+    return train_X, train_y, test_X, test_y
 
 
 if __name__ == "__main__":

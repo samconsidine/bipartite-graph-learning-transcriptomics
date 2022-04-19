@@ -8,7 +8,7 @@ from torch_geometric.utils import to_dense_adj
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 data = bipartite_graph_dataloader(load_data(), include_gene_idx=True, include_fc_data=False)
 
-model = GrapeModule(data.x.shape[1], 4, 2, 1, 19).to(device)
+model = GrapeModule(data.x.shape[1], 4, 2, 1, 19, data.n_genes).to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 

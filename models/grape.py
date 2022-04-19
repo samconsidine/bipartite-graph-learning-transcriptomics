@@ -7,11 +7,11 @@ from torch.nn import Module, Linear, ReLU, Sequential, ModuleList
 
 
 class GrapeModule(Module):
-    def __init__(self, in_dim, emb_dim, n_layers, edge_dim, out_dim):
+    def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes):
         super().__init__()
         self.edge_mlp = Linear(2*emb_dim, out_dim)
         
-        self.emb = Linear(in_dim, emb_dim)
+        self.emb = torch.nn.Embedding(n_genes+1, emb_dim)
 
         ## GNN Layers
         self.convs = ModuleList()
@@ -39,7 +39,7 @@ class GrapeModule(Module):
         )
 
     def forward(self, x, edge_attr, edge_index):
-        x = self.emb(x)
+        x = self.emb(x.long()).squeeze(1)
         edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
         for conv, edge_update in zip(self.convs, self.edge_update_fns[1:]):
             x = conv(x, edge_attr, edge_index)
@@ -89,4 +89,8 @@ class GrapeLayer(MessagePassing):
     def update(self, aggr_out, x):
         aggr = torch.cat((aggr_out, x), dim=-1)
         return self.embedding_fn(aggr)
+
+
+
+ 
 
