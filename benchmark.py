@@ -27,9 +27,9 @@ class ExperimentConfig:
     models: Dict[str, ModelConfig]
 
 
-def train_model(config: ModelConfig, X, y):
+def train_model(config: ModelConfig, X, y, X_val, y_val):
     model = config.model(**config.model_kwargs)
-    model, train_loss = config.train_procedure(model, X, y)
+    model, train_loss = config.train_procedure(model, X, y, X_val, y_val)
     print(f"Trained model {config.name} - train loss: {train_loss}")
     return model
 
@@ -39,7 +39,7 @@ def run_experiment(config: ExperimentConfig):
 
     metrics = dict()
     for name, model in config.models.items():
-        trained_model = train_model(model, X_train, y_train)
+        trained_model = train_model(model, X_train, y_train, X_test, y_test)
         metrics[model.name] = model.eval_procedure(trained_model, X_test, y_test)
 
     return metrics
