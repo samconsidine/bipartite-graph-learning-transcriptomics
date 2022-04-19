@@ -48,13 +48,13 @@ def run_experiment(config: ExperimentConfig):
 if __name__=="__main__":
     config = ExperimentConfig(
         models = {
-            'logistic_regression': ModelConfig(
-                name='LogisticRegression',
-                model=LogisticRegression,
-                train_procedure=train_logistic_regression,
-                eval_procedure=eval_logistic_regression,
-                model_kwargs=dict(),
-            ),
+            # 'logistic_regression': ModelConfig(
+            #     name='LogisticRegression',
+            #     model=LogisticRegression,
+            #     train_procedure=train_logistic_regression,
+            #     eval_procedure=eval_logistic_regression,
+            #     model_kwargs=dict(),
+            # ),
             'grape': ModelConfig(
                 name='GRAPE',
                 model=GrapeModule,

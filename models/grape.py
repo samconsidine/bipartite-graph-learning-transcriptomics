@@ -106,7 +106,3 @@ class GrapeLayer(MessagePassing):
         aggr = torch.cat((aggr_out, x), dim=-1)
         return self.embedding_fn(aggr)
 
-
-
- 
-

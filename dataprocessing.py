@@ -8,6 +8,8 @@ import pandas as pd
 
 from torch.utils.data import DataLoader
 
+from typing import List
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -58,8 +60,14 @@ def bipartite_graph_dataloader(X, y, include_fc_data=False):
     )
 
 
-def to_batched(data: Data) -> DataLoader:
-    ...
+def batched_bipartite_graph(X, y, batch_size: int) -> List[Data]:
+    batched = []
+
+    for idx in range(0, X.shape[0], batch_size):
+        batched.append(bipartite_graph_dataloader(X[idx:(idx+batch_size)], y[idx:(idx+batch_size)]))
+
+    return batched
+
 
 
 def adata_to_bipartite_adj(df):
