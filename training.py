@@ -9,10 +9,10 @@ from models.grape import GrapeModule
 from dataprocessing import bipartite_graph_dataloader, load_data, batched_bipartite_graph
 
 
-def train_grape(model: GrapeModule, X: pd.DataFrame, y: pd.DataFrame, X_val, y_val) -> GrapeModule:
+def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val, y_val) -> torch.nn.Module:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    batches = batched_bipartite_graph(X, y, batch_size=64)
+    batches = batched_bipartite_graph(X, y, batch_size=X.shape[0])
     val_data = bipartite_graph_dataloader(X_val, y_val)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 

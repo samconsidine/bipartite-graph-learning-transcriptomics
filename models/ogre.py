@@ -9,7 +9,7 @@ from torch.nn import Module, Linear, ReLU, Sequential, ModuleList
 import pandas as pd
 
 
-class Togre(Module):
+class Ogre(Module):
     def __init__(
         self, 
         in_dim, 
@@ -80,7 +80,7 @@ class Togre(Module):
         return self.edge_prediction_fn(edge_attr)
 
 
-class TogreLayer(MessagePassing):
+class OgreLayer(MessagePassing):
     def __init__(self, in_dim, out_dim, edge_dim, n_pathways, aggr='sum'):
         super().__init__()
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     df = pd.read_csv("pathways.csv", index_col=0)
     gene_pathways_mask = torch.tensor(df.values)
 
-    layer = TogreLayer(2, 1, 1, gene_pathways_mask.shape[1])
+    layer = OgreLayer(2, 1, 1, gene_pathways_mask.shape[1])
     a = torch.arange(20).reshape((10, 2)).float()
     edges = torch.arange(100).reshape(100, 1)
     edge_index = torch_geometric.utils.grid(10, 10)[1].long().T

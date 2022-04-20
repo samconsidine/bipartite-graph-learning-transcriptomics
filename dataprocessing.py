@@ -83,10 +83,13 @@ def adata_to_bipartite_adj(df):
     return dense_to_sparse(edge_weights)
  
 
-def load_data():
+def load_data(config):
     data = sc.datasets.paul15()
+    data.X = data.X.astype('float32')
+    if config.n_genes is not None:
+        sc.pp.recipe_zheng17(data, n_top_genes=config.n_genes)
     df = data.to_df()
-    df['target'] = data.obs
+    df['target'] = data.obs['paul15_clusters']
     df = df.dropna(subset=['target'])
     df['target'] = df.target.astype('category')
     train, test = train_test_split(df)
