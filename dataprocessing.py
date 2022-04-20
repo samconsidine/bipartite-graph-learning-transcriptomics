@@ -23,11 +23,15 @@ def convert_to_undigraph(edge_index, edge_attr):
     return new_edges.to(device), new_attrs.to(device)
 
 
-def bipartite_graph_dataloader(X, y, include_fc_data=False):
+def bipartite_graph_dataloader(X, y, include_fc_data=False, undirected=True):
     n_cells = X.shape[0]
     n_genes = X.shape[1]
 
     adj, edge_attr = adata_to_bipartite_adj(X)
+    if undirected:
+        mask = adj[0] >= n_cells
+        adj = adj[:, mask]
+        edge_attr = edge_attr[mask]
 
     mask = torch.cat([torch.ones(n_cells), torch.zeros(n_genes)]).to(torch.bool)
     train_mask = random_mask(n_cells, 0.8)
@@ -35,7 +39,7 @@ def bipartite_graph_dataloader(X, y, include_fc_data=False):
     y = torch.tensor(y.cat.codes.values)
     y = torch.cat([y, torch.zeros(n_genes)]).long().to(device)
     
-    inputs = torch.cat([torch.zeros(n_cells), torch.arange(n_genes)], axis=0).unsqueeze(0).T.to(device)
+    inputs = torch.cat([torch.zeros([n_cells, n_genes]), torch.eye(n_genes)], dim=0).to(device)
 
     from_nodes = torch.repeat_interleave(torch.arange(n_cells), n_genes)
     to_nodes = torch.repeat_interleave(torch.arange(n_cells, n_genes+n_cells), n_cells)
@@ -44,7 +48,7 @@ def bipartite_graph_dataloader(X, y, include_fc_data=False):
     fc_edge_attr = torch.tensor(X.values.flatten())
     assert fc_edge_attr.shape[0] == fc_edge_index.shape[1]
     
-    fc_edge_index, fc_edge_attr = convert_to_undigraph(fc_edge_index, fc_edge_attr)
+    #fc_edge_index, fc_edge_attr = convert_to_undigraph(fc_edge_index, fc_edge_attr)
 
     return Data(
         x=inputs,
@@ -92,7 +96,7 @@ def load_data(config):
     df['target'] = data.obs['paul15_clusters']
     df = df.dropna(subset=['target'])
     df['target'] = df.target.astype('category')
-    train, test = train_test_split(df)
+    train, test = train_test_split(df, random_state=42)
     train_X = train[train.columns[:-1]]
     train_y = train['target']
     test_X = test[test.columns[:-1]]

@@ -46,47 +46,48 @@ def run_experiment(config: ExperimentConfig):
     return metrics
 
 
-if __name__=="__main__":
-    n_genes = 100
-    config = ExperimentConfig(
-        n_genes=n_genes,
-        models = {
-            'logistic_regression': ModelConfig(
-                name='LogisticRegression',
-                model=LogisticRegression,
-                train_procedure=train_logistic_regression,
-                eval_procedure=eval_logistic_regression,
-                model_kwargs=dict(),
-            ),
-            'grape': ModelConfig(
-                name='GRAPE',
-                model=GrapeModule,
-                train_procedure=train_grape,
-                eval_procedure=eval_grape,
-                model_kwargs={
-                    'emb_dim': 4,
-                    'n_layers': 2,
-                    'edge_dim': 1,
-                    'out_dim': 19,
-                    'n_genes': 3451,
-                },
-            ),
-            # 'ogre': ModelConfig(
-            #     name='OGRE',
-            #     model=OgreModule,
-            #     train_procedure=train_grape,
-            #     eval_procedure=eval_grape,
-            #     n_genes=n_genes,
-            #     model_kwargs={
-            #         'emb_dim': 4,
-            #         'n_layers': 2,
-            #         'edge_dim': 1,
-            #         'n_pathways': ...,
-            #         'out_dim': 19,
-            #         'n_genes': n_genes,
-            #     },
-            # )
-        }
+def run_gene_count_experiment():
+    results = []
+    for n_genes in range(100, 2100, 100):
+        config = ExperimentConfig(
+            n_genes=n_genes,
+            models = {
+                'logistic_regression': ModelConfig(
+                    name='LogisticRegression',
+                    model=LogisticRegression,
+                    train_procedure=train_logistic_regression,
+                    eval_procedure=eval_logistic_regression,
+                    model_kwargs=dict(),
+                ),
+                'grape': ModelConfig(
+                    name='GRAPE',
+                    model=GrapeModule,
+                    train_procedure=train_grape,
+                    eval_procedure=eval_grape,
+                    model_kwargs={
+                        'emb_dim': 100,
+                        'n_layers': 2,
+                        'edge_dim': 1,
+                        'out_dim': 19,
+                        'n_genes': n_genes
+                    },
+                )
+            }
+        )
+        try:
+            res = run_experiment(config)
+        except RuntimeError as e:
+            print(e)
+            config.models['grape'].model_kwargs['n_genes'] -= 1
+            res = run_experiment(config)
 
-    )
-    print(run_experiment(config))
+        results.append({**res, **{'n_genes': n_genes}})
+    return results
+
+
+if __name__ == "__main__":
+    results = run_gene_count_experiment()
+    import pandas as pd
+    df = pd.DataFrame(results)
+    print(df)
+    df.to_csv('n_genes_experiment.csv', index=False)
