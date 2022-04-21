@@ -86,7 +86,7 @@ class OgreLayer(MessagePassing):
             ReLU(),
         )
         self.f = Sequential(Linear(in_dim+edge_dim, 343), ReLU())
-        self.P = P
+        self.P = P.to(device)
         self.n_genes = n_genes
 
     def forward(self, x, edge_attr, edge_index):
