@@ -10,7 +10,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class GrapeModule(Module):
-    def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes):
+    def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes, *args):
         super().__init__()
         self.kws = dict(
             emb_dim = emb_dim,

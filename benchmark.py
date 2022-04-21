@@ -29,7 +29,10 @@ class ExperimentConfig:
 
 
 def train_model(config: ModelConfig, X, y, X_val, y_val, P):
-    model = config.model(**config.model_kwargs, P=P)
+    if config.name == "OGRE":
+        model = config.model(**config.model_kwargs, P=P)
+    else:
+        model = config.model(**config.model_kwargs)
     model, train_loss = config.train_procedure(model, X, y, X_val, y_val, P)
     print(f"Trained model {config.name} - train loss: {train_loss}")
     return model
@@ -104,4 +107,4 @@ if __name__ == "__main__":
     import pandas as pd
     df = pd.DataFrame(results)
     print(df)
-    df.to_csv('n_genes_experiment.csv', index=False)
+    df.to_csv('ogre_experiment.csv', index=False)
