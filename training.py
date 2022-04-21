@@ -12,7 +12,7 @@ from dataprocessing import bipartite_graph_dataloader, load_data, batched_bipart
 def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val, y_val, P) -> torch.nn.Module:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    batches = batched_bipartite_graph(X, y, batch_size=X.shape[0])
+    batches = batched_bipartite_graph(X, y, batch_size=256)
     val_data = bipartite_graph_dataloader(X_val, y_val)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
 
