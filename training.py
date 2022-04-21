@@ -31,7 +31,7 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
 
     model.train()
     prev_acc = 0
-    for epoch in range(2000):
+    for epoch in range(200):
         for data in batches:
             optimizer.zero_grad()
             node_pred, edge_pred = model(data.x, data.edge_attr.unsqueeze(0).T, data.edge_index)

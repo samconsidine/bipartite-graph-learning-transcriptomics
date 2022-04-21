@@ -122,7 +122,10 @@ def load_data(config):
     data = remove_genes_without_pathways(data, pathways)
 
     if config.n_genes is not None:
-        sc.pp.recipe_zheng17(data, n_top_genes=config.n_genes+1)
+        sc.pp.recipe_zheng17(data, n_top_genes=config.n_genes)
+        if data.X.shape[1] != config.n_genes:
+            print(f"Error in recipe. Changing n_genes from {config.n_genes} to {data.X.shape[1]}")
+            config.n_genes = data.X.shape[1]
         #sc.pp.highly_variable_genes(data, n_top_genes=config.n_genes)
     df = data.to_df()
     df['target'] = data.obs[data.obs.columns[0]]
