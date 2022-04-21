@@ -149,6 +149,21 @@ def load_data(config):
     return train_X, train_y, test_X, test_y, P
 
 
+def bin_packing_p(df: pd.DataFrame, size: torch.Size) -> torch.Tensor:
+    nrows, ncols = size
+    
+    nn = ncols
+    P = torch.eye(nrows, min(nn, nrows))
+    nn -= nrows
+
+    while nn > 0:
+        P = torch.cat((P, torch.eye(nrows, min(nn, nrows))), dim=-1)
+        nn -= nrows
+
+    return P
+
+
+
 if __name__ == "__main__":
     data = load_data()
     

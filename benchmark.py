@@ -1,6 +1,6 @@
 from sklearn.linear_model import LogisticRegression
 from models import GrapeModule, OgreModule
-from dataprocessing import load_data
+from dataprocessing import load_data, bin_packing_p
 from training import (
     train_grape, 
     train_logistic_regression,
@@ -39,12 +39,17 @@ def train_model(config: ModelConfig, X, y, X_val, y_val, P, n_genes):
 
 
 def run_experiment(config: ExperimentConfig):
-    X_train, y_train, X_test, y_test, P = load_data(config)
+    X_train, y_train, X_test, y_test, pathways = load_data(config)
     print(config.n_genes)
 
     metrics = dict()
     for name, model in config.models.items():
         print(f"training on data of shape {X_train.shape}")
+        if name == 'FullOGRE':
+            P = bin_packing_p(X_train, pathways.shape)
+        else:
+            P = pathways
+
         trained_model = train_model(model, X_train, y_train, X_test, y_test, P, config.n_genes)
         metrics[model.name] = model.eval_procedure(trained_model, X_test, y_test, P, config.n_genes)
 
@@ -53,7 +58,7 @@ def run_experiment(config: ExperimentConfig):
 
 def run_gene_count_experiment():
     results = []
-    for n_genes in range(100, 1200, 100):
+    for n_genes in range(100, 2000, 100):
         config = ExperimentConfig(
             n_genes=n_genes,
             models = {
@@ -77,6 +82,18 @@ def run_gene_count_experiment():
                     },
                 ),
                 'ogre': ModelConfig(
+                    name='OGRE',
+                    model=OgreModule,
+                    train_procedure=train_grape,
+                    eval_procedure=eval_grape,
+                    model_kwargs={
+                        'emb_dim': 20,
+                        'n_layers': 2,
+                        'edge_dim': 1,
+                        'out_dim': 19,
+                    },
+                ),
+                'FullOGRE': ModelConfig(
                     name='OGRE',
                     model=OgreModule,
                     train_procedure=train_grape,
