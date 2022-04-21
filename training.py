@@ -9,7 +9,7 @@ from models.grape import GrapeModule
 from dataprocessing import bipartite_graph_dataloader, load_data, batched_bipartite_graph
 
 
-def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val, y_val) -> torch.nn.Module:
+def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val, y_val, P) -> torch.nn.Module:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     batches = batched_bipartite_graph(X, y, batch_size=X.shape[0])
@@ -55,7 +55,7 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
     return model, node_acc
 
 
-def eval_grape(model: GrapeModule, X: pd.DataFrame, y:pd.DataFrame) -> float:
+def eval_grape(model: GrapeModule, X: pd.DataFrame, y:pd.DataFrame, *args) -> float:
     model.eval()
     data = bipartite_graph_dataloader(X, y)
 
@@ -82,6 +82,6 @@ def train_logistic_regression(
     return model, model.score(X, y)
 
 
-def eval_logistic_regression(model: LogisticRegression, X: pd.DataFrame, y: pd.DataFrame) -> float:
+def eval_logistic_regression(model: LogisticRegression, X: pd.DataFrame, y: pd.DataFrame, *args) -> float:
     return model.score(X, y)
 
