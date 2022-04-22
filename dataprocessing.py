@@ -74,7 +74,6 @@ def batched_bipartite_graph(X, y, batch_size: int) -> List[Data]:
     return batched
 
 
-
 def adata_to_bipartite_adj(df):
     n_cells = df.shape[0]
     n_genes = df.shape[1]
@@ -115,15 +114,19 @@ def to_anndata(df: pd.DataFrame):
 
 # Also have to drop pathway rows not in the genes in our expr
 def load_data(config):
+    use_pathways = config.use_pathways
+    if not use_pathways:
+        P = None
     data = sc.datasets.paul15()
     data.X = data.X.astype('float32')
 
-    pathways = load_pathways('pathways.csv')
-    data = remove_genes_without_pathways(data, pathways)
+    if use_pathways:
+        pathways = load_pathways('pathways.csv')
+        data = remove_genes_without_pathways(data, pathways)
 
     if config.n_genes is not None:
-        sc.pp.highly_variable_genes(data, n_top_genes=config.n_genes)
-        # sc.pp.recipe_zheng17(data, n_top_genes=config.n_genes)
+        # sc.pp.highly_variable_genes(data, n_top_genes=config.n_genes)
+        sc.pp.recipe_zheng17(data, n_top_genes=config.n_genes)
         if data.X.shape[1] != config.n_genes:
             print(f"Error in recipe. Changing n_genes from {config.n_genes} to {data.X.shape[1]}")
             config.n_genes = data.X.shape[1]
@@ -134,9 +137,10 @@ def load_data(config):
     df['target'] = df.target.astype('category')
     df = df.reset_index(drop=True)
 
-    pathways = pathways.loc[np.isin(pathways.index, df.columns)]
-    P = torch.tensor(pathways.values)
-    df = df[pathways.index.tolist() + ['target']]  # Reorganise columns (uncecessary as alphabetised)
+    if use_pathways:
+        pathways = pathways.loc[np.isin(pathways.index, df.columns)]
+        P = torch.tensor(pathways.values)
+        df = df[pathways.index.tolist() + ['target']]  # Reorganise columns (uncecessary as alphabetised)
 
     train, test = train_test_split(df, random_state=42)
     train_X = train[train.columns[:-1]]
@@ -144,14 +148,15 @@ def load_data(config):
     test_X = test[test.columns[:-1]]
     test_y = test['target']
 
-    assert pathways.shape[0] == df.shape[1] - 1
+    if use_pathways:
+        assert pathways.shape[0] == df.shape[1] - 1
 
     return train_X, train_y, test_X, test_y, P
 
 
 def bin_packing_p(df: pd.DataFrame, size: torch.Size) -> torch.Tensor:
     nrows, ncols = size
-    
+
     nn = ncols
     P = torch.eye(nrows, min(nn, nrows))
     nn -= nrows
@@ -163,10 +168,9 @@ def bin_packing_p(df: pd.DataFrame, size: torch.Size) -> torch.Tensor:
     return P
 
 
-
 if __name__ == "__main__":
     data = load_data()
-    
+
     adj, edge_index = sc_rna_seq_to_bipartite_adj(data)
 
     print(f"{edge_index=}, {adj=}")
