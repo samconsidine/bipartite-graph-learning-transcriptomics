@@ -153,6 +153,10 @@ def load_data(config):
 
     return train_X, train_y, test_X, test_y, P
 
+def random_p(pathways):
+    prop = pathways.sum() / (pathways.shape[0] * pathways.shape[1])
+    P = (torch.rand(pathways.shape) < prop).long().to(device)
+    return P
 
 def bin_packing_p(df: pd.DataFrame, size: torch.Size) -> torch.Tensor:
     nrows, ncols = size

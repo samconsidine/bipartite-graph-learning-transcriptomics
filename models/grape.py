@@ -19,6 +19,7 @@ class GrapeModule(Module):
             out_dim = out_dim,
             n_genes = n_genes
         )
+        self.name = 'grape'
 
         self.edge_mlp = Linear(2*emb_dim, out_dim)
         

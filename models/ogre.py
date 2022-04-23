@@ -12,6 +12,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class OgreModule(Module):
     def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes, P):
         super().__init__()
+        self.name = 'ogre'
 
         self.edge_mlp = Linear(2*emb_dim, out_dim)
         
@@ -86,7 +87,8 @@ class OgreLayer(MessagePassing):
             ReLU(),
         )
         self.f = Sequential(Linear(in_dim+edge_dim, 343), ReLU())
-        self.P = (P / P.sum(1).unsqueeze(0).T).to(device)
+        #self.P = (P / P.sum(1).unsqueeze(0).T).to(device)
+        self.P = P.to(device)
         self.n_genes = n_genes
 
     def forward(self, x, edge_attr, edge_index):

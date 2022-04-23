@@ -12,12 +12,15 @@ from dataprocessing import bipartite_graph_dataloader, load_data, batched_bipart
 def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val, y_val, P) -> torch.nn.Module:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    batches = batched_bipartite_graph(X, y, batch_size=256)
+    batches = batched_bipartite_graph(X, y, batch_size=128)
     val_data = bipartite_graph_dataloader(X_val, y_val)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+    #optimizer = torch.optim.SGD(model.parameters(), lr=1e1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
 
     node_loss_fn = torch.nn.CrossEntropyLoss() 
     edge_loss_fn = torch.nn.BCEWithLogitsLoss()
+    #scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=1e-3)
+
     #edge_target = to_dense_adj(data.fc_edge_index)[:data.n_cells, :data.n_genes].flatten()
     #edge_target = (data.edge_attr > 0).float()
     val_target = val_data.y
@@ -31,7 +34,8 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
 
     model.train()
     prev_acc = 0
-    for epoch in range(200):
+    epochs = 200
+    for epoch in range(epochs):
         for data in batches:
             optimizer.zero_grad()
             node_pred, edge_pred = model(data.x, data.edge_attr.unsqueeze(0).T, data.edge_index)
@@ -41,6 +45,7 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
             loss.backward()
             optimizer.step()
 
+        #scheduler.step()
         with torch.no_grad():
             node_pred, edge_pred = model(val_data.x,
                                          val_data.edge_attr.unsqueeze(0).T, 
