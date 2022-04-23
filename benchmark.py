@@ -26,6 +26,7 @@ class ModelConfig:
 class ExperimentConfig:
     models: Dict[str, ModelConfig]
     n_genes: int
+    use_pathways: int
 
 
 def train_model(config: ModelConfig, X, y, X_val, y_val, P, n_genes):
@@ -46,7 +47,7 @@ def run_experiment(config: ExperimentConfig):
     for name, model in config.models.items():
         print(f"training on data of shape {X_train.shape}")
         if name == 'FullOGRE':
-            P = bin_packing_p(X_train, pathways.shape)
+            P = bin_packing_p(X_train, (config.n_genes, 343))
         else:
             P = pathways
 
@@ -58,9 +59,10 @@ def run_experiment(config: ExperimentConfig):
 
 def run_gene_count_experiment():
     results = []
-    for n_genes in range(100, 2000, 100):
+    for n_genes in range(100, 2700, 100):
         config = ExperimentConfig(
             n_genes=n_genes,
+            use_pathways = False,
             models = {
                 'logistic_regression': ModelConfig(
                     name='LogisticRegression',
@@ -81,20 +83,20 @@ def run_gene_count_experiment():
                         'out_dim': 19,
                     },
                 ),
-                'ogre': ModelConfig(
-                    name='OGRE',
-                    model=OgreModule,
-                    train_procedure=train_grape,
-                    eval_procedure=eval_grape,
-                    model_kwargs={
-                        'emb_dim': 20,
-                        'n_layers': 2,
-                        'edge_dim': 1,
-                        'out_dim': 19,
-                    },
-                ),
+                # 'ogre': ModelConfig(
+                #     name='OGRE',
+                #     model=OgreModule,
+                #     train_procedure=train_grape,
+                #     eval_procedure=eval_grape,
+                #     model_kwargs={
+                #         'emb_dim': 20,
+                #         'n_layers': 2,
+                #         'edge_dim': 1,
+                #         'out_dim': 19,
+                #     },
+                # ),
                 'FullOGRE': ModelConfig(
-                    name='OGRE',
+                    name='FullOGRE',
                     model=OgreModule,
                     train_procedure=train_grape,
                     eval_procedure=eval_grape,
@@ -108,14 +110,17 @@ def run_gene_count_experiment():
             }
         )
         #try:
-        res = run_experiment(config)
+        try:
+            res = run_experiment(config)
+            results.append({**res, **{'n_genes': n_genes}})
+        except Exception as e:
+            print(e)
         #except RuntimeError as e:
         #    print(e)
         #    config.models['grape'].model_kwargs['n_genes'] -= 1
         #    config.models['ogre'].model_kwargs['n_genes'] -= 1
         #    res = run_experiment(config)
 
-        results.append({**res, **{'n_genes': n_genes}})
     return results
 
 
