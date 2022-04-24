@@ -5,6 +5,7 @@ from torch_geometric.data import Data
 import scanpy as sc
 from sklearn.model_selection import train_test_split
 import pandas as pd
+import numpy as np
 
 from torch.utils.data import DataLoader
 
@@ -23,11 +24,15 @@ def convert_to_undigraph(edge_index, edge_attr):
     return new_edges.to(device), new_attrs.to(device)
 
 
-def bipartite_graph_dataloader(X, y, include_fc_data=False):
+def bipartite_graph_dataloader(X, y, include_fc_data=False, undirected=True):
     n_cells = X.shape[0]
     n_genes = X.shape[1]
 
     adj, edge_attr = adata_to_bipartite_adj(X)
+    if undirected:
+        mask = adj[0] >= n_cells
+        adj = adj[:, mask]
+        edge_attr = edge_attr[mask]
 
     mask = torch.cat([torch.ones(n_cells), torch.zeros(n_genes)]).to(torch.bool)
     train_mask = random_mask(n_cells, 0.8)
@@ -35,7 +40,7 @@ def bipartite_graph_dataloader(X, y, include_fc_data=False):
     y = torch.tensor(y.cat.codes.values)
     y = torch.cat([y, torch.zeros(n_genes)]).long().to(device)
     
-    inputs = torch.cat([torch.zeros(n_cells), torch.arange(n_genes)], axis=0).unsqueeze(0).T.to(device)
+    inputs = torch.cat([torch.zeros([n_cells, n_genes]), torch.eye(n_genes)], dim=0).to(device)
 
     from_nodes = torch.repeat_interleave(torch.arange(n_cells), n_genes)
     to_nodes = torch.repeat_interleave(torch.arange(n_cells, n_genes+n_cells), n_cells)
@@ -44,7 +49,7 @@ def bipartite_graph_dataloader(X, y, include_fc_data=False):
     fc_edge_attr = torch.tensor(X.values.flatten())
     assert fc_edge_attr.shape[0] == fc_edge_index.shape[1]
     
-    fc_edge_index, fc_edge_attr = convert_to_undigraph(fc_edge_index, fc_edge_attr)
+    #fc_edge_index, fc_edge_attr = convert_to_undigraph(fc_edge_index, fc_edge_attr)
 
     return Data(
         x=inputs,
@@ -69,7 +74,6 @@ def batched_bipartite_graph(X, y, batch_size: int) -> List[Data]:
     return batched
 
 
-
 def adata_to_bipartite_adj(df):
     n_cells = df.shape[0]
     n_genes = df.shape[1]
@@ -83,26 +87,94 @@ def adata_to_bipartite_adj(df):
     return dense_to_sparse(edge_weights)
  
 
+def load_pathways(pathways_file: str) -> pd.DataFrame:
+    pathways = pd.read_csv(pathways_file, index_col=0)
+    pathways = pathways.loc[pathways.sum(1) > 0]  # Remove genes with all 0s in pathway
+    return pathways
+
+
+def remove_genes_without_pathways(data, pathways: pd.DataFrame) -> pd.DataFrame:
+    df = data.to_df()
+    df = df[pathways.loc[pathways.sum(1) > 0].index]
+    df['target'] = data.obs
+    return to_anndata(df)
+
+
+def load_pathways_tensor(pathways_file: str) -> torch.Tensor:
+    pathways = pd.read_csv(pathways_file, index_col=0)
+    pathways = pathways.loc[pathways.sum(1) > 0]  # Remove genes with all 0s in pathway
+    return torch.tensor(pathways.values)
+
+
+def to_anndata(df: pd.DataFrame):
+    import anndata
+    adata = anndata.AnnData(X=df[df.columns[:-1]].values, obs=pd.DataFrame(df.target), var=pd.DataFrame([], index=df.columns[:-1].tolist()))
+    return adata
+
+
+# Also have to drop pathway rows not in the genes in our expr
 def load_data(config):
+    use_pathways = config.use_pathways
+    if not use_pathways:
+        P = None
     data = sc.datasets.paul15()
     data.X = data.X.astype('float32')
+
+    if use_pathways:
+        pathways = load_pathways('pathways.csv')
+        data = remove_genes_without_pathways(data, pathways)
+
     if config.n_genes is not None:
+        # sc.pp.highly_variable_genes(data, n_top_genes=config.n_genes)
         sc.pp.recipe_zheng17(data, n_top_genes=config.n_genes)
+        if data.X.shape[1] != config.n_genes:
+            print(f"Error in recipe. Changing n_genes from {config.n_genes} to {data.X.shape[1]}")
+            config.n_genes = data.X.shape[1]
     df = data.to_df()
-    df['target'] = data.obs['paul15_clusters']
+    df['target'] = data.obs[data.obs.columns[0]]
     df = df.dropna(subset=['target'])
+
     df['target'] = df.target.astype('category')
-    train, test = train_test_split(df)
+    df = df.reset_index(drop=True)
+
+    if use_pathways:
+        pathways = pathways.loc[np.isin(pathways.index, df.columns)]
+        P = torch.tensor(pathways.values)
+        df = df[pathways.index.tolist() + ['target']]  # Reorganise columns (uncecessary as alphabetised)
+
+    train, test = train_test_split(df, random_state=42)
     train_X = train[train.columns[:-1]]
     train_y = train['target']
     test_X = test[test.columns[:-1]]
     test_y = test['target']
-    return train_X, train_y, test_X, test_y
+
+    if use_pathways:
+        assert pathways.shape[0] == df.shape[1] - 1
+
+    return train_X, train_y, test_X, test_y, P
+
+def random_p(pathways):
+    prop = pathways.sum() / (pathways.shape[0] * pathways.shape[1])
+    P = (torch.rand(pathways.shape) < prop).long().to(device)
+    return P
+
+def bin_packing_p(df: pd.DataFrame, size: torch.Size) -> torch.Tensor:
+    nrows, ncols = size
+
+    nn = ncols
+    P = torch.eye(nrows, min(nn, nrows))
+    nn -= nrows
+
+    while nn > 0:
+        P = torch.cat((P, torch.eye(nrows, min(nn, nrows))), dim=-1)
+        nn -= nrows
+
+    return P
 
 
 if __name__ == "__main__":
     data = load_data()
-    
+
     adj, edge_index = sc_rna_seq_to_bipartite_adj(data)
 
     print(f"{edge_index=}, {adj=}")

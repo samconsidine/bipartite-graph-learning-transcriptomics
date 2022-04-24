@@ -10,7 +10,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class GrapeModule(Module):
-    def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes):
+    def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes, **kwargs):
         super().__init__()
         self.kws = dict(
             emb_dim = emb_dim,
@@ -19,10 +19,11 @@ class GrapeModule(Module):
             out_dim = out_dim,
             n_genes = n_genes
         )
+        self.name = 'grape'
 
         self.edge_mlp = Linear(2*emb_dim, out_dim)
         
-        self.emb = torch.nn.Embedding(n_genes+1, emb_dim)
+        self.emb = Linear(n_genes, emb_dim)
 
         ## GNN Layers
         self.convs = ModuleList()
@@ -52,11 +53,11 @@ class GrapeModule(Module):
         self.to(device)
 
     def forward(self, x, edge_attr, edge_index):
-        x = self.emb(x.long()).squeeze(1)
-        edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
+        x = self.emb(x)
+        #edge_attr = self.update_edges(x, edge_attr, edge_index, self.edge_update_fns[0])
         for conv, edge_update in zip(self.convs, self.edge_update_fns[1:]):
             x = conv(x, edge_attr, edge_index)
-            edge_attr = self.update_edges(x, edge_attr, edge_index, edge_update)
+            #edge_attr = self.update_edges(x, edge_attr, edge_index, edge_update)
 
         node_prediction = self.node_pred_fn(x)
         edge_prediction = self.predict_edges(x, edge_attr, edge_index)
@@ -99,8 +100,8 @@ class GrapeLayer(MessagePassing):
         message = torch.cat((x_j, edge_attr), dim=-1)
         return self.message_fn(message)
 
-    def aggregate(self, inputs, index):
-        return scatter(inputs, index, dim=self.node_dim, reduce=self.aggr)
+    #def aggregate(self, inputs, index):
+    #    return scatter(inputs, index, dim=self.node_dim, reduce=self.aggr)
 
     def update(self, aggr_out, x):
         aggr = torch.cat((aggr_out, x), dim=-1)
