@@ -59,7 +59,7 @@ def run_experiment(config: ExperimentConfig):
 
 def run_gene_count_experiment():
     results = []
-    for n_genes in range(100, 1500, 50):
+    for n_genes in range(100, 1550, 10):
         config = ExperimentConfig(
             n_genes=n_genes,
             use_pathways = True,
