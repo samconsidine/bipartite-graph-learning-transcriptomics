@@ -59,10 +59,10 @@ def run_experiment(config: ExperimentConfig):
 
 def run_gene_count_experiment():
     results = []
-    for n_genes in range(100, 1550, 10):
+    for n_genes in range(100, 3400, 50):
         config = ExperimentConfig(
             n_genes=n_genes,
-            use_pathways = True,
+            use_pathways = False,
             models = {
                 'logistic_regression': ModelConfig(
                     name='LogisticRegression',
@@ -83,30 +83,30 @@ def run_gene_count_experiment():
                         'out_dim': 19,
                     },
                 ),
-                'ogre': ModelConfig(
-                    name='OGRE',
-                    model=OgreModule,
-                    train_procedure=train_grape,
-                    eval_procedure=eval_grape,
-                    model_kwargs={
-                        'emb_dim': 20,
-                        'n_layers': 2,
-                        'edge_dim': 1,
-                        'out_dim': 19,
-                    },
-                ),
-                'FullOGRE': ModelConfig(
-                    name='FullOGRE',
-                    model=OgreModule,
-                    train_procedure=train_grape,
-                    eval_procedure=eval_grape,
-                    model_kwargs={
-                        'emb_dim': 20,
-                        'n_layers': 2,
-                        'edge_dim': 1,
-                        'out_dim': 19,
-                    },
-                )
+                # 'ogre': ModelConfig(
+                #     name='OGRE',
+                #     model=OgreModule,
+                #     train_procedure=train_grape,
+                #     eval_procedure=eval_grape,
+                #     model_kwargs={
+                #         'emb_dim': 20,
+                #         'n_layers': 2,
+                #         'edge_dim': 1,
+                #         'out_dim': 19,
+                #     },
+                # ),
+                # 'FullOGRE': ModelConfig(
+                #     name='FullOGRE',
+                #     model=OgreModule,
+                #     train_procedure=train_grape,
+                #     eval_procedure=eval_grape,
+                #     model_kwargs={
+                #         'emb_dim': 20,
+                #         'n_layers': 2,
+                #         'edge_dim': 1,
+                #         'out_dim': 19,
+                #     },
+                # )
             }
         )
         res = run_experiment(config)
@@ -120,4 +120,4 @@ if __name__ == "__main__":
     import pandas as pd
     df = pd.DataFrame(results)
     print(df)
-    df.to_csv('first_final_test.csv', index=False)
+    df.to_csv('grape_scaling.csv', index=False)
