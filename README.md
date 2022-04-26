@@ -17,7 +17,4 @@ python3 scripts/plot_results.py experiments/all_models.csv
 ```
 
 ### Run different experiments
-There is no command line interface, so to change the experiment setup, you need to edit the `ExperimentConfig` object in the `benchmarking.py` script directly.
-
-
-
+There is no command line interface, so to change the experiment setup, you need to edit the `ExperimentConfig` object in the `benchmarking.py` script directly. For example, to change the output `csv` location, change the `ExperimentConfig.name` parameter in the instantiation.
