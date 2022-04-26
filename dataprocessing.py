@@ -121,7 +121,7 @@ def load_data(config):
     data.X = data.X.astype('float32')
 
     if use_pathways:
-        pathways = load_pathways('pathways.csv')
+        pathways = load_pathways('pathways/pathways.csv')
         data = remove_genes_without_pathways(data, pathways)
         print(data)
 

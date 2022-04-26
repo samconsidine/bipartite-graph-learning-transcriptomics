@@ -1,3 +1,8 @@
+"""
+Script created by Ramon Viñas https://github.com/rvinas
+"""
+
+
 from Bio.KEGG import REST
 import numpy as np
 from pathlib import Path
@@ -73,4 +78,4 @@ if __name__=="__main__":
     genes_p = mouse_pathway_data(gene_symbols, mp)  
     df = pd.DataFrame(genes_p, columns=mp.tolist(), index=gene_symbols)
 
-    df.astype(int).to_csv('pathways.csv')
+    df.astype(int).to_csv('pathways/pathways.csv')

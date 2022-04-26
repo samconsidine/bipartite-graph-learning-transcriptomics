@@ -13,7 +13,7 @@ python3 benchmarking.py
 Plots can then be created using the `plot_results.py` script with the name of the `csv` file created by the `benchmarking.py` script.
 
 ```
-python3 plot_results.py experiments/all_models.csv
+python3 scripts/plot_results.py experiments/all_models.csv
 ```
 
 ### Run different experiments
