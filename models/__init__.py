@@ -1,2 +1,2 @@
 from models.grape import GrapeModule
-from models.ogre import OgreModule
+from models.pathways import PathwaysModule

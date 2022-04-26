@@ -14,7 +14,6 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
 
     batches = batched_bipartite_graph(X, y, batch_size=128)
     val_data = bipartite_graph_dataloader(X_val, y_val)
-    #optimizer = torch.optim.SGD(model.parameters(), lr=1e1)
     optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
 
     node_loss_fn = torch.nn.CrossEntropyLoss() 
@@ -33,7 +32,6 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
         return (target == class_choice).float().mean().item()
 
     model.train()
-    prev_acc = 0
     epochs = 200
     for epoch in range(epochs):
         for data in batches:
@@ -45,17 +43,13 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
             loss.backward()
             optimizer.step()
 
-        #scheduler.step()
-        with torch.no_grad():
-            node_pred, edge_pred = model(val_data.x,
-                                         val_data.edge_attr.unsqueeze(0).T, 
-                                         val_data.edge_index)
-            node_acc = node_accuracy(node_pred[val_data.mask], val_target[val_data.mask])
-            print("Val accuracy = ", node_acc)
+    with torch.no_grad():
+        node_pred, edge_pred = model(val_data.x,
+                                     val_data.edge_attr.unsqueeze(0).T, 
+                                     val_data.edge_index)
+        node_acc = node_accuracy(node_pred[val_data.mask], val_target[val_data.mask])
+        print("Val accuracy = ", node_acc)
 
-            prev_acc = node_acc
-            if node_acc > 0.95:
-                return model, node_acc
 
     return model, node_acc
 

@@ -9,10 +9,10 @@ from torch.nn import Module, Linear, ReLU, Sequential, ModuleList
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-class OgreModule(Module):
+class PathwaysModule(Module):
     def __init__(self, emb_dim, n_layers, edge_dim, out_dim, n_genes, P):
         super().__init__()
-        self.name = 'ogre'
+        self.name = 'pathways'
 
         self.edge_mlp = Linear(2*emb_dim, out_dim)
         
@@ -21,7 +21,7 @@ class OgreModule(Module):
         ## GNN Layers
         self.convs = ModuleList()
         for _ in range(n_layers):
-            self.convs.append(OgreLayer(in_dim=emb_dim, out_dim=emb_dim, edge_dim=edge_dim, P=P, n_genes=n_genes))
+            self.convs.append(PathwaysLayer(in_dim=emb_dim, out_dim=emb_dim, edge_dim=edge_dim, P=P, n_genes=n_genes))
 
         ## Node prediction MLP
         self.node_pred_fn = Linear(emb_dim, out_dim)
@@ -71,10 +71,10 @@ class OgreModule(Module):
         return self.edge_prediction_fn(edge_attr)
 
     def reset(self):
-        return OgreModule(**self.kws)
+        return PathwaysModule(**self.kws)
 
 
-class OgreLayer(MessagePassing):
+class PathwaysLayer(MessagePassing):
     def __init__(self, in_dim, out_dim, edge_dim, P, n_genes, aggr='sum'):
         super().__init__()
 

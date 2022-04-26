@@ -123,6 +123,7 @@ def load_data(config):
     if use_pathways:
         pathways = load_pathways('pathways.csv')
         data = remove_genes_without_pathways(data, pathways)
+        print(data)
 
     if config.n_genes is not None:
         # sc.pp.highly_variable_genes(data, n_top_genes=config.n_genes)
