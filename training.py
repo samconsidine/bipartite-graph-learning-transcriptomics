@@ -32,7 +32,7 @@ def train_grape(model: torch.nn.Module, X: pd.DataFrame, y: pd.DataFrame, X_val,
         return (target == class_choice).float().mean().item()
 
     model.train()
-    epochs = 200
+    epochs = 10
     for epoch in range(epochs):
         for data in batches:
             optimizer.zero_grad()

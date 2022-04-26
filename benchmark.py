@@ -10,6 +10,7 @@ from training import (
 
 from dataclasses import dataclass
 from sys import argv
+import os
 
 from typing import Dict, Any, Callable
 
@@ -61,7 +62,7 @@ def run_experiment(config: ExperimentConfig):
 
 def run_gene_count_experiment():
     results = []
-    for n_genes in range(100, 1550, 50):
+    for n_genes in range(100, 150, 50):
         config = ExperimentConfig(
             name='all_models',
             n_genes=n_genes,
@@ -118,6 +119,9 @@ def run_gene_count_experiment():
     import pandas as pd
     df = pd.DataFrame(results)
     print(df)
+    if not os.path.exists('experiments'):
+        os.mkdir('experiments')
+
     df.to_csv(f'experiments/{config.name}.csv', index=False)
     return results
 
