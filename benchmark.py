@@ -9,6 +9,7 @@ from training import (
 )
 
 from dataclasses import dataclass
+from sys import argv
 
 from typing import Dict, Any, Callable
 
@@ -24,6 +25,7 @@ class ModelConfig:
 
 @dataclass
 class ExperimentConfig:
+    name: str
     models: Dict[str, ModelConfig]
     n_genes: int
     use_pathways: int
@@ -61,6 +63,7 @@ def run_gene_count_experiment():
     results = []
     for n_genes in range(100, 1550, 50):
         config = ExperimentConfig(
+            name='all_models',
             n_genes=n_genes,
             use_pathways = True,
             models = {
@@ -112,12 +115,12 @@ def run_gene_count_experiment():
         res = run_experiment(config)
         results.append({**res, **{'n_genes': n_genes}})
 
+    import pandas as pd
+    df = pd.DataFrame(results)
+    print(df)
+    df.to_csv(f'experiments/{config.name}.csv', index=False)
     return results
 
 
 if __name__ == "__main__":
     results = run_gene_count_experiment()
-    import pandas as pd
-    df = pd.DataFrame(results)
-    print(df)
-    df.to_csv('grape_scaling.csv', index=False)
